@@ -1,27 +1,38 @@
-import { CommandRegistry, handlerLogin, registerCommand, runCommand } from "./command";
-import {setUser, readConfig} from "./config"
+import {
+  CommandsRegistry,
+  registerCommand,
+  runCommand,
+} from "./commands/commands";
+import { handlerLogin, handlerRegister, handlerReset, handlerUsers } from "./commands/users";
 
-function main(){
+async function main() {
+  const args = process.argv.slice(2);
 
-    try {
-        const registry: CommandRegistry = {}
-        registerCommand(registry, "login", handlerLogin)
+  if (args.length < 1) {
+    console.log("usage: cli <command> [args...]");
+    process.exit(1);
+  }
 
-        const args = process.argv.slice(2)
+  const cmdName = args[0];
+  const cmdArgs = args.slice(1);
+  const commandsRegistry: CommandsRegistry = {};
 
-        if(args.length < 1) {
-            console.log("Usage: gator <command> [args...]")
-            process.exit(1)
-        }
-        const cmdName = args[0]
-        const username = args.slice(1)
+  registerCommand(commandsRegistry, "login", handlerLogin);
+  registerCommand(commandsRegistry, "register", handlerRegister);
+  registerCommand(commandsRegistry, "reset", handlerReset)
+  registerCommand(commandsRegistry, "users", handlerUsers)
 
-        runCommand(registry, cmdName, ...username)
-    } catch (err) {
-        console.log(err)
-        process.exit(1)
+  try {
+    await runCommand(commandsRegistry, cmdName, ...cmdArgs);
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error(`Error running command ${cmdName}: ${err.message}`);
+    } else {
+      console.error(`Error running command ${cmdName}: ${err}`);
     }
-    
+    process.exit(1);
+  }
+  process.exit(0);
 }
 
 main();

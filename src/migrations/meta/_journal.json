@@ -15,6 +15,13 @@
       "when": 1771787126000,
       "tag": "0001_faithful_black_panther",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771867604853,
+      "tag": "0002_sharp_romulus",
+      "breakpoints": true
     }
   ]
 }

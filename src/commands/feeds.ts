@@ -2,6 +2,8 @@ import { readConfig } from "src/config";
 import { createFeed, getAllFeeds } from "src/lib/db/queries/feeds";
 import { getUser, getUserById } from "src/lib/db/queries/users";
 import { Feed, User } from "../lib/db/schema";
+import { createFeedFollow } from "src/lib/db/queries/feed_follows";
+import { printFeedFollow } from "./feed-follows";
 
 export async function handlerAddFeed(cmdName: string, ...args: string[]) {
     if (args.length !== 2) {
@@ -19,35 +21,46 @@ export async function handlerAddFeed(cmdName: string, ...args: string[]) {
     const feedUrl = args[1]
 
     const feed = await createFeed(feedName, feedUrl, user.id)
-
+    
     if (!feed) {
         throw new Error(`Failed to create feed: ${feedName}`);
     }
 
+    const feedFollow = await createFeedFollow(user.id, feed.id);
+
+    printFeedFollow(user.name, feedFollow.feedName);
+
     console.log("Feed created successfully!");
-
-    function printFeed(feed: Feed, user: User) {
-
-        console.log(`* User ID: ${user.id}`)
-        console.log(`* Feed Name: ${feed.name}`)
-        console.log(`* Feed URL: ${feed.url}`)
-    }
 
     printFeed(feed, user);
 
 }
 
-export async function handlerListFeeds(cmdName: string, ...args: string[]) {
-    const feeds = await getAllFeeds()
+function printFeed(feed: Feed, user: User) {
+    console.log(`* ID:            ${feed.id}`);
+    console.log(`* Created:       ${feed.createdAt}`);
+    console.log(`* Updated:       ${feed.updatedAt}`);
+    console.log(`* name:          ${feed.name}`);
+    console.log(`* URL:           ${feed.url}`);
+    console.log(`* User:          ${user.name}`);
+}
 
-    for(const feed of feeds){
+export async function handlerListFeeds(_: string) {
+    const feeds = await getAllFeeds();
+
+    if (feeds.length === 0) {
+        console.log(`No feeds found.`);
+        return;
+    }
+
+    console.log(`Found %d feeds:\n`, feeds.length);
+    for (let feed of feeds) {
         const user = await getUserById(feed.userId);
-        if (user) {
-            console.log(`* User: ${user.name}`);
+        if (!user) {
+        throw new Error(`Failed to find user for feed ${feed.id}`);
         }
 
-        console.log(`* ${feed.name}`)
-        console.log(`* ${feed.url}`)
-    
+        printFeed(feed, user);
+        console.log(`=====================================`);
     }
 }
